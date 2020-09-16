@@ -1,67 +1,155 @@
-package pl.pandait.panda;
-import java.net.URL;
-import java.net.MalformedURLException;
-import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.remote.RemoteWebDriver;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Platform;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
-import static org.junit.Assert.assertEquals;
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.2.4.RELEASE</version>
+    <relativePath/>
+    <!-- lookup parent from repository -->
+  </parent>
+  <groupId>pl.pandait</groupId>
+  <artifactId>panda</artifactId>
+  <version>0.0.2-SNAPSHOT</version>
+  <name>panda</name>
+  <description>Demo project for Spring Boot</description>
 
-//@SpringBootTest(classes = {PandaApplication.class}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class PandaApplicationSeleniumTest {
-    
-    private static WebDriver driver;
-    
-    // @LocalServerPort
-    // private int port;
-    
-    @BeforeEach
-    public void startup() throws InterruptedException, MalformedURLException {
+  <properties>
+    <java.version>11</java.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-thymeleaf</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.junit.vintage</groupId>
+          <artifactId>junit-vintage-engine</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-java</artifactId>
+      <version>3.141.59</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.19.1</version>
+        <configuration>
+          <includes>
+            <include>HelloControllerTest.java</include>
+            <include>PandaApplicationTest.java</include>
+          </includes>
+        </configuration>
+        <dependencies>
+          <!-- let surefire run JUnit 4 but also JUnit 5 tests -->
+          <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-surefire-provider</artifactId>
+            <version>1.1.0</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>docker</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.spotify</groupId>
+            <artifactId>dockerfile-maven-plugin</artifactId>
+            <version>1.4.0</version>
+            <executions>
+              <execution>
+                <id>default</id>
+                <goals>
+                  <goal>build</goal>
+                  <goal>push</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <repository>${project.artifactId}</repository>
+              <tag>${project.version}</tag>
+              <buildArgs>
+                <JAR_FILE>target/${project.artifactId}-${project.version}.jar</JAR_FILE>
+              </buildArgs>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>1.1.1</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>selenium</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.19.1</version>
+            <configuration>
+              <includes>
+                <include>**.*SeleniumTest.java</include>
+              </includes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+        <distributionManagement>
+                <repository>
+                        <id>artifactory</id>
+                        <name>release</name>
+                        <url>http://myjfrog:8082/artifactory/libs-release-local</url>
+                </repository>
+                <snapshotRepository>
+                        <id>artifactory</id>
+                        <name>snapshots</name>
+                        <url>http://myjfrog:8082/artifactory/libs-snapshot-local</url>
+                </snapshotRepository>
+        </distributionManagement>
         
-        DesiredCapabilities capabilities = DesiredCapabilities.firefox();
-        capabilities.setPlatform(Platform.LINUX);
-        driver = new RemoteWebDriver(new URL("http://192.168.44.44:4444/wd/hub"), capabilities);
-        // Pamiętaj, że aplikacja Spring musi działać! To znaczy też musi być włączona.
-        
-        driver.get(String.format("http://192.168.44.44:%d/", 8085));
-
-
-        //Czekamy 2 sekundy
-        Thread.sleep(2000);
-    }
-
-    @Test
-    public void greetings_shouldOpenMainPageThenReturnWelcomeText() {
-        System.out.println("Uruchamiam test 1: Sprawdzenie napisu na stronie głównej");
-        WebElement greetingElement = driver.findElement(By.xpath("//p"));
-        String greetingText = greetingElement.getText().trim();
-        assertEquals("Get your greeting here", greetingText);
-    }
-
-    @Test
-    public void greetings_shouldOpenSubpageThenReturnGreetingsText() {
-        System.out.println("Uruchamiam test 2: Sprawdzenie napisu na podstronie");
-        WebElement greetingElement = driver.findElement(By.xpath("//p"));
-        WebElement linkToGreetings = greetingElement.findElement(By.xpath("./a"));
-        linkToGreetings.click();
-
-        WebElement helloWorldString = driver.findElement(By.xpath("//p"));
-        String newPageString = helloWorldString.getText().trim();
-        assertEquals("Hello, World!", newPageString);
-    }
-
-
-    @AfterEach
-    public void after() {
-        driver.quit();
-    }
-}
+</project>
